@@ -1,127 +1,410 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kartaviy City</title>
 
-  <title>Kartaviy City</title>
-
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#111;color:white;font-family:Arial;overflow:hidden}
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#151b25;z-index:5}
+button{border:0;border-radius:12px;padding:14px 20px;margin:6px;background:#2878ff;color:white;font-size:16px}
+h1{font-size:34px}
+#game{display:none;position:fixed;inset:0}
+#ui{position:fixed;top:10px;left:10px;right:10px;z-index:2;display:flex;justify-content:space-between;pointer-events:none}
+.panel{background:#18202ddd;padding:10px;border-radius:12px}
+#buildings{position:fixed;bottom:10px;left:10px;right:10px;display:flex;flex-wrap:wrap;justify-content:center;z-index:3}
+#buildings button{font-size:13px;padding:10px}
+#walkControls{display:none;position:fixed;inset:0;z-index:4;pointer-events:none}
+#joystick{position:absolute;bottom:35px;left:30px;width:125px;height:125px;border:2px solid #ffffff66;border-radius:50%;background:#ffffff18;pointer-events:auto}
+#knob{position:absolute;left:37px;top:37px;width:47px;height:47px;border-radius:50%;background:#ffffffaa}
+#interact{position:absolute;right:25px;bottom:55px;pointer-events:auto}
+#exit{position:absolute;right:20px;top:70px;pointer-events:auto}
+#hint{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#111b;padding:8px 14px;border-radius:10px;z-index:3}
+</style>
 </head>
 
 <body>
 
-  <!-- Главное меню -->
-  <div id="mainMenu" class="screen">
-    <div class="menu-box">
-      <h1>KARTAVIY CITY</h1>
-      <p>Построй свой город</p>
+<div id="menu">
+  <h1>Kartaviy City</h1>
+  <p>Город твоего будущего</p>
+  <button onclick="startGame()">Начать игру</button>
+</div>
 
-      <button id="startGame">Начать игру</button>
-      <button id="loadGame">Загрузить город</button>
+<div id="game">
+  <div id="ui">
+    <div class="panel">
+      💰 <span id="money">50000</span> ₽<br>
+      👥 Население: <span id="population">0</span>
+    </div>
+    <div class="panel">
+      ⭐ Уровень: <span id="level">1</span><br>
+      🎮 <span id="mode">Карта</span>
     </div>
   </div>
 
-  <!-- Игровой интерфейс -->
-  <div id="gameInterface" class="hidden">
+  <div id="hint">Проводи пальцем по карте для вращения</div>
 
-    <header class="top-bar">
-      <div class="city-name">Мой город</div>
-
-      <div class="resources">
-        <span>💰 <b id="money">50000</b> ₽</span>
-        <span>👥 <b id="population">0</b></span>
-        <span>⭐ Ур. <b id="level">1</b></span>
-      </div>
-    </header>
-
-    <!-- Сообщения игры -->
-    <div id="notification"></div>
-
-    <!-- Игровой экран -->
-    <main id="gameContainer"></main>
-
-    <!-- Меню строительства -->
-    <section id="constructionMenu" class="construction-menu">
-
-      <button class="build-button" data-building="road">
-        🛣️<span>Дорога</span>
-      </button>
-
-      <button class="build-button" data-building="house">
-        🏠<span>Дом</span>
-      </button>
-
-      <button class="build-button" data-building="shop">
-        🏪<span>Магазин</span>
-      </button>
-
-      <button class="build-button" data-building="school">
-        🏫<span>Школа</span>
-      </button>
-
-      <button class="build-button" data-building="hospital">
-        🏥<span>Больница</span>
-      </button>
-
-      <button class="build-button" data-building="park">
-        🌳<span>Парк</span>
-      </button>
-
-      <button class="build-button" data-building="bridge">
-        🌉<span>Мост</span>
-      </button>
-
-      <button class="build-button" data-building="bulldozer">
-        🚜<span>Убрать</span>
-      </button>
-
-      <button id="walkModeButton" class="build-button">
-        🚶<span>Прогулка</span>
-      </button>
-    </section>
-
-    <!-- Управление прогулкой -->
-    <div id="walkControls" class="hidden">
-
-      <div id="joystick">
-        <div id="joystickKnob"></div>
-      </div>
-
-      <button id="interactButton">Взаимодействовать</button>
-      <button id="exitWalkButton">Выйти</button>
-
-    </div>
-
-    <!-- Задания -->
-    <aside id="missionsPanel">
-      <h3>📋 Задания</h3>
-      <p id="missionText">Построй первый дом</p>
-      <div>Награда: <span id="missionReward">1000</span> ₽</div>
-    </aside>
-
-    <!-- Подтверждение удаления -->
-    <div id="confirmBox" class="hidden">
-      <h3>Удалить препятствия?</h3>
-      <p id="confirmText">
-        На территории находятся деревья или камни.
-      </p>
-
-      <button id="confirmRemove">Подтвердить</button>
-      <button id="cancelRemove">Отмена</button>
-    </div>
-
+  <div id="buildings">
+    <button onclick="build('house')">🏠 Дом</button>
+    <button onclick="build('shop')">🏪 Магазин</button>
+    <button onclick="build('school')">🏫 Школа</button>
+    <button onclick="build('hospital')">🏥 Больница</button>
+    <button onclick="build('road')">🛣️ Дорога</button>
+    <button onclick="build('park')">🌳 Парк</button>
+    <button onclick="startWalk()">🚶 Прогулка</button>
   </div>
 
-  <!-- Скрипты игры -->
-  <script src="save.js"></script>
-  <script src="city.js"></script>
-  <script src="construction.js"></script>
-  <script src="player.js"></script>
-  <script src="game.js"></script>
+  <div id="walkControls">
+    <div id="joystick"><div id="knob"></div></div>
+    <button id="interact" onclick="interact()">Взаимодействие</button>
+    <button id="exit" onclick="stopWalk()">Выйти</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+let scene, camera, renderer;
+let city = new THREE.Group();
+let player;
+let walking = false;
+let selected = null;
+let money = 50000;
+let population = 0;
+let level = 1;
+
+let angle = Math.PI / 4;
+let distance = 115;
+let target = new THREE.Vector3(0,0,0);
+
+let dragging = false;
+let lastX = 0;
+let lastY = 0;
+
+const keys = {};
+const joystick = {x:0,y:0};
+
+function startGame(){
+  document.getElementById("menu").style.display="none";
+  document.getElementById("game").style.display="block";
+  createWorld();
+  animate();
+}
+
+function createWorld(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x8db8d4);
+
+  camera = new THREE.PerspectiveCamera(
+    55, innerWidth/innerHeight, 0.1, 1000
+  );
+
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  document.getElementById("game").appendChild(renderer.domElement);
+
+  scene.add(new THREE.HemisphereLight(0xffffff,0x445566,2));
+
+  const sun = new THREE.DirectionalLight(0xffffff,2);
+  sun.position.set(50,100,50);
+  scene.add(sun);
+
+  scene.add(city);
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(240,240),
+    new THREE.MeshStandardMaterial({color:0x527b49})
+  );
+  ground.rotation.x=-Math.PI/2;
+  scene.add(ground);
+
+  createRoad(0,0,0,220);
+  createRoad(0,0,Math.PI/2,220);
+
+  for(let i=-5;i<=5;i++){
+    for(let j=-5;j<=5;j++){
+      if(Math.random()>.65) createTree(i*10+4,j*10+4);
+    }
+  }
+
+  updateCamera();
+
+  renderer.domElement.addEventListener("pointerdown",startDrag);
+  renderer.domElement.addEventListener("pointermove",moveDrag);
+  renderer.domElement.addEventListener("pointerup",stopDrag);
+  renderer.domElement.addEventListener("pointercancel",stopDrag);
+
+  addEventListener("resize",()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+  });
+
+  addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
+  addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+}
+
+function startDrag(e){
+  dragging=true;
+  lastX=e.clientX;
+  lastY=e.clientY;
+}
+
+function moveDrag(e){
+  if(!dragging || walking)return;
+
+  const dx=e.clientX-lastX;
+  const dy=e.clientY-lastY;
+
+  angle-=dx*0.008;
+  distance=Math.max(35,Math.min(180,distance+dy*0.25));
+
+  lastX=e.clientX;
+  lastY=e.clientY;
+
+  updateCamera();
+}
+
+function stopDrag(){
+  dragging=false;
+}
+
+function updateCamera(){
+  if(walking)return;
+
+  camera.position.set(
+    target.x+Math.sin(angle)*distance,
+    distance*.75,
+    target.z+Math.cos(angle)*distance
+  );
+
+  camera.lookAt(target);
+}
+
+function createRoad(x,z,rotation,length){
+  const road=new THREE.Mesh(
+    new THREE.BoxGeometry(10,.12,length),
+    new THREE.MeshStandardMaterial({color:0x30343a})
+  );
+
+  road.position.set(x,.06,z);
+  road.rotation.y=rotation;
+  city.add(road);
+}
+
+function createTree(x,z){
+  const tree=new THREE.Group();
+
+  const trunk=new THREE.Mesh(
+    new THREE.CylinderGeometry(.5,.7,3,8),
+    new THREE.MeshStandardMaterial({color:0x684329})
+  );
+
+  const crown=new THREE.Mesh(
+    new THREE.ConeGeometry(2.5,5,8),
+    new THREE.MeshStandardMaterial({color:0x245c32})
+  );
+
+  trunk.position.y=1.5;
+  crown.position.y=5;
+
+  tree.add(trunk,crown);
+  tree.position.set(x,0,z);
+  city.add(tree);
+}
+
+function build(type){
+  if(walking)return;
+
+  const prices={
+    house:5000,
+    shop:8000,
+    school:15000,
+    hospital:25000,
+    park:3000,
+    road:1000
+  };
+
+  if(money<prices[type]){
+    alert("Недостаточно денег");
+    return;
+  }
+
+  money-=prices[type];
+
+  if(type==="road"){
+    createRoad(
+      Math.round(target.x/10)*10,
+      Math.round(target.z/10)*10,
+      0,40
+    );
+  }else if(type==="park"){
+    createPark(target.x,target.z);
+  }else{
+    createBuilding(type,target.x,target.z);
+
+    if(type==="house")population+=5;
+  }
+
+  updateUI();
+}
+
+function createBuilding(type,x,z){
+  const colors={
+    house:0xd8b18a,
+    shop:0x4e91d1,
+    school:0xd5c16f,
+    hospital:0xe5e5e5
+  };
+
+  const sizes={
+    house:[8,8,8],
+    shop:[10,10,10],
+    school:[14,8,12],
+    hospital:[16,10,14]
+  };
+
+  const s=sizes[type];
+
+  const building=new THREE.Mesh(
+    new THREE.BoxGeometry(s[0],s[1],s[2]),
+    new THREE.MeshStandardMaterial({color:colors[type]})
+  );
+
+  building.position.set(
+    Math.round(x/10)*10,
+    s[1]/2,
+    Math.round(z/10)*10
+  );
+
+  city.add(building);
+}
+
+function createPark(x,z){
+  const park=new THREE.Mesh(
+    new THREE.BoxGeometry(12,.2,12),
+    new THREE.MeshStandardMaterial({color:0x3c9b55})
+  );
+
+  park.position.set(
+    Math.round(x/10)*10,
+    .1,
+    Math.round(z/10)*10
+  );
+
+  city.add(park);
+}
+
+function startWalk(){
+  walking=true;
+  document.getElementById("buildings").style.display="none";
+  document.getElementById("walkControls").style.display="block";
+  document.getElementById("mode").textContent="Прогулка";
+
+  player=new THREE.Object3D();
+  player.position.set(0,2,15);
+  scene.add(player);
+
+  camera.position.set(0,2,0);
+  player.add(camera);
+  camera.position.set(0,0,0);
+
+  bindJoystick();
+}
+
+function stopWalk(){
+  walking=false;
+
+  if(player){
+    scene.remove(player);
+    player=null;
+  }
+
+  document.getElementById("buildings").style.display="flex";
+  document.getElementById("walkControls").style.display="none";
+  document.getElementById("mode").textContent="Карта";
+
+  updateCamera();
+}
+
+function bindJoystick(){
+  const base=document.getElementById("joystick");
+  const knob=document.getElementById("knob");
+
+  function move(e){
+    const r=base.getBoundingClientRect();
+    const x=e.clientX-r.left-62.5;
+    const y=e.clientY-r.top-62.5;
+    const max=42;
+    const len=Math.min(max,Math.hypot(x,y));
+    const a=Math.atan2(y,x);
+
+    joystick.x=Math.cos(a)*len/max;
+    joystick.y=Math.sin(a)*len/max;
+
+    knob.style.left=(37+joystick.x*42)+"px";
+    knob.style.top=(37+joystick.y*42)+"px";
+  }
+
+  function reset(){
+    joystick.x=0;
+    joystick.y=0;
+    knob.style.left="37px";
+    knob.style.top="37px";
+  }
+
+  base.onpointermove=e=>{
+    if(e.buttons)move(e);
+  };
+
+  base.onpointerdown=e=>{
+    base.setPointerCapture(e.pointerId);
+    move(e);
+  };
+
+  base.onpointerup=reset;
+  base.onpointercancel=reset;
+}
+
+function updatePlayer(){
+  if(!walking || !player)return;
+
+  let x=joystick.x;
+  let z=joystick.y;
+
+  if(keys["w"])z=-1;
+  if(keys["s"])z=1;
+  if(keys["a"])x=-1;
+  if(keys["d"])x=1;
+
+  player.position.x+=x*.18;
+  player.position.z+=z*.18;
+}
+
+function interact(){
+  alert("Здесь появится взаимодействие с объектами города.");
+}
+
+function updateUI(){
+  document.getElementById("money").textContent=money;
+  document.getElementById("population").textContent=population;
+  document.getElementById("level").textContent=level;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  updatePlayer();
+
+  if(renderer && scene && camera){
+    renderer.render(scene,camera);
+  }
+}
+</script>
 
 </body>
 </html>
