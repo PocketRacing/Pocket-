@@ -1,286 +1,234 @@
-/* =====================================
-   KARTAVIY CITY — ПРОГУЛКА
-===================================== */
+// ======================================
+// KARTAVIY CITY — PLAYER.JS
+// ======================================
 
 let player;
 let playerYaw = 0;
 let playerPitch = 0;
-
 let isWalking = false;
-let keys = {};
 
-let joystickActive = false;
-let joystickPointerId = null;
+let keys = {};
 let joystickX = 0;
 let joystickY = 0;
 
-let cameraLookPointer = null;
-let lastLookX = 0;
-let lastLookY = 0;
-
 const PLAYER_HEIGHT = 1.7;
-const PLAYER_SPEED = 0.12;
+const PLAYER_SPEED = 0.18;
 const MOUSE_SENSITIVITY = 0.003;
 
-/* =====================================
-   СОЗДАНИЕ ИГРОКА
-===================================== */
+let playerControlsBound = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchMoving = false;
+
+// ======================================
+// СОЗДАНИЕ ПЕРСОНАЖА
+// ======================================
 
 function createPlayer() {
-  player = new THREE.Object3D();
+  if (player) return;
 
+  player = new THREE.Object3D();
   player.position.set(0, PLAYER_HEIGHT, 15);
 
   scene.add(player);
 
-  camera.position.set(0, 0, 0);
   player.add(camera);
 
+  camera.position.set(0, 0, 0);
   camera.rotation.order = "YXZ";
-}
 
-/* =====================================
-   НАЧАЛО ПРОГУЛКИ
-===================================== */
+  playerYaw = 0;
+  playerPitch = 0;
 
-function startWalkMode() {
-  if (!player) {
-    createPlayer();
-  }
-
-  isWalking = true;
-  state.mode = "walk";
-
-  player.position.y = PLAYER_HEIGHT;
-
-  document
-    .getElementById("constructionMenu")
-    .classList.add("hidden");
-
-  document
-    .getElementById("missionsPanel")
-    .classList.add("hidden");
-
-  document
-    .getElementById("walkControls")
-    .classList.remove("hidden");
-
-  showNotification(
-    "🚶 Прогулка началась. WASD — движение, мышь или свайп — обзор"
-  );
-}
-
-/* =====================================
-   ВЫХОД ИЗ ПРОГУЛКИ
-===================================== */
-
-function stopWalkMode() {
-  isWalking = false;
-  state.mode = "city";
-
-  document
-    .getElementById("constructionMenu")
-    .classList.remove("hidden");
-
-  document
-    .getElementById("missionsPanel")
-    .classList.remove("hidden");
-
-  document
-    .getElementById("walkControls")
-    .classList.add("hidden");
-
-  if (document.pointerLockElement) {
-    document.exitPointerLock();
-  }
-
-  showNotification("🏙️ Вы вернулись в режим города");
-}
-
-/* =====================================
-   КНОПКИ
-===================================== */
-
-document
-  .getElementById("walkModeButton")
-  .addEventListener("click", startWalkMode);
-
-document
-  .getElementById("exitWalkButton")
-  .addEventListener("click", stopWalkMode);
-
-/* =====================================
-   КЛАВИАТУРА
-===================================== */
-
-window.addEventListener("keydown", event => {
-  keys[event.code] = true;
-
-  if (
-    isWalking &&
-    ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)
-  ) {
-    event.preventDefault();
-  }
-});
-
-window.addEventListener("keyup", event => {
-  keys[event.code] = false;
-});
-
-/* =====================================
-   ПОВОРОТ КАМЕРЫ НА ПК
-===================================== */
-
-renderer?.domElement?.addEventListener("click", () => {
-  if (!isWalking) return;
-
-  if (
-    document.pointerLockElement !== renderer.domElement &&
-    renderer.domElement.requestPointerLock
-  ) {
-    renderer.domElement.requestPointerLock();
-  }
-});
-
-document.addEventListener("mousemove", event => {
-  if (!isWalking) return;
-
-  if (document.pointerLockElement === renderer.domElement) {
-    playerYaw -= event.movementX * MOUSE_SENSITIVITY;
-    playerPitch -= event.movementY * MOUSE_SENSITIVITY;
-
-    limitCameraRotation();
-    updateCameraRotation();
-  }
-});
-
-/* =====================================
-   ПОВОРОТ КАМЕРЫ СВАЙПОМ
-===================================== */
-
-renderer?.domElement?.addEventListener(
-  "pointerdown",
-  event => {
-    if (!isWalking) return;
-
-    if (event.pointerType === "mouse") return;
-
-    if (
-      event.clientX < window.innerWidth * 0.35 &&
-      event.clientY > window.innerHeight * 0.55
-    ) {
-      return;
-    }
-
-    cameraLookPointer = event.pointerId;
-
-    lastLookX = event.clientX;
-    lastLookY = event.clientY;
-
-    renderer.domElement.setPointerCapture(
-      event.pointerId
-    );
-  }
-);
-
-renderer?.domElement?.addEventListener(
-  "pointermove",
-  event => {
-    if (!isWalking) return;
-
-    if (event.pointerId !== cameraLookPointer) {
-      return;
-    }
-
-    const deltaX = event.clientX - lastLookX;
-    const deltaY = event.clientY - lastLookY;
-
-    lastLookX = event.clientX;
-    lastLookY = event.clientY;
-
-    playerYaw -= deltaX * 0.006;
-    playerPitch -= deltaY * 0.006;
-
-    limitCameraRotation();
-    updateCameraRotation();
-  }
-);
-
-function stopCameraLook(event) {
-  if (event.pointerId === cameraLookPointer) {
-    cameraLookPointer = null;
-  }
-}
-
-renderer?.domElement?.addEventListener(
-  "pointerup",
-  stopCameraLook
-);
-
-renderer?.domElement?.addEventListener(
-  "pointercancel",
-  stopCameraLook
-);
-
-/* =====================================
-   ОГРАНИЧЕНИЕ ОБЗОРА
-===================================== */
-
-function limitCameraRotation() {
-  const limit = Math.PI / 2 - 0.1;
-
-  playerPitch = Math.max(
-    -limit,
-    Math.min(limit, playerPitch)
-  );
-}
-
-function updateCameraRotation() {
   player.rotation.y = playerYaw;
   camera.rotation.x = playerPitch;
 }
 
-/* =====================================
-   ДВИЖЕНИЕ ИГРОКА
-===================================== */
+// ======================================
+// ПРИВЯЗКА УПРАВЛЕНИЯ
+// ======================================
 
-function updatePlayerMovement() {
+function bindPlayerControls() {
+  if (playerControlsBound) return;
+  if (!renderer || !renderer.domElement) return;
+
+  playerControlsBound = true;
+
+  const canvas = renderer.domElement;
+
+  // Клавиатура
+  document.addEventListener("keydown", event => {
+    keys[event.key.toLowerCase()] = true;
+  });
+
+  document.addEventListener("keyup", event => {
+    keys[event.key.toLowerCase()] = false;
+  });
+
+  // Мышь
+  canvas.addEventListener("click", () => {
+    if (isWalking && document.pointerLockElement !== canvas) {
+      canvas.requestPointerLock?.();
+    }
+  });
+
+  document.addEventListener("mousemove", event => {
+    if (!isWalking) return;
+    if (document.pointerLockElement !== canvas) return;
+
+    playerYaw -= event.movementX * MOUSE_SENSITIVITY;
+    playerPitch -= event.movementY * MOUSE_SENSITIVITY;
+
+    playerPitch = Math.max(
+      -Math.PI / 2,
+      Math.min(Math.PI / 2, playerPitch)
+    );
+
+    updatePlayerCamera();
+  });
+
+  // Свайп на телефоне
+  canvas.addEventListener("touchstart", event => {
+    if (!isWalking) return;
+
+    const touch = event.touches[0];
+
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchMoving = true;
+  }, { passive: true });
+
+  canvas.addEventListener("touchmove", event => {
+    if (!isWalking || !touchMoving) return;
+
+    const touch = event.touches[0];
+
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+
+    playerYaw -= dx * 0.006;
+    playerPitch -= dy * 0.006;
+
+    playerPitch = Math.max(
+      -Math.PI / 2,
+      Math.min(Math.PI / 2, playerPitch)
+    );
+
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+
+    updatePlayerCamera();
+
+    event.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener("touchend", () => {
+    touchMoving = false;
+  });
+}
+
+// ======================================
+// КАМЕРА
+// ======================================
+
+function updatePlayerCamera() {
+  if (!player) return;
+
+  player.rotation.y = playerYaw;
+  camera.rotation.x = playerPitch;
+}
+
+// ======================================
+// РЕЖИМ ПРОГУЛКИ
+// ======================================
+
+function startWalkMode() {
+  if (isWalking) return;
+  if (!scene || !camera || !renderer) return;
+
+  bindPlayerControls();
+  createPlayer();
+
+  isWalking = true;
+
+  const controls = document.getElementById("walkControls");
+
+  if (controls) {
+    controls.style.display = "block";
+  }
+
+  const mode = document.getElementById("mode");
+
+  if (mode) {
+    mode.textContent = "Прогулка";
+  }
+
+  updatePlayerCamera();
+}
+
+function stopWalkMode() {
+  isWalking = false;
+
+  if (document.pointerLockElement) {
+    document.exitPointerLock?.();
+  }
+
+  if (player) {
+    scene.remove(player);
+    player = null;
+  }
+
+  const controls = document.getElementById("walkControls");
+
+  if (controls) {
+    controls.style.display = "none";
+  }
+
+  const mode = document.getElementById("mode");
+
+  if (mode) {
+    mode.textContent = "Карта";
+  }
+}
+
+// Совместимость со старыми кнопками
+function startWalk() {
+  startWalkMode();
+}
+
+function stopWalk() {
+  stopWalkMode();
+}
+
+// ======================================
+// ДВИЖЕНИЕ
+// ======================================
+
+function updatePlayer() {
   if (!isWalking || !player) return;
 
   let forward = 0;
-  let right = 0;
+  let side = 0;
 
-  if (keys["KeyW"] || keys["ArrowUp"]) {
-    forward += 1;
-  }
-
-  if (keys["KeyS"] || keys["ArrowDown"]) {
-    forward -= 1;
-  }
-
-  if (keys["KeyD"] || keys["ArrowRight"]) {
-    right += 1;
-  }
-
-  if (keys["KeyA"] || keys["ArrowLeft"]) {
-    right -= 1;
-  }
+  if (keys["w"] || keys["arrowup"]) forward += 1;
+  if (keys["s"] || keys["arrowdown"]) forward -= 1;
+  if (keys["a"] || keys["arrowleft"]) side -= 1;
+  if (keys["d"] || keys["arrowright"]) side += 1;
 
   forward += -joystickY;
-  right += joystickX;
+  side += joystickX;
 
-  const length = Math.hypot(forward, right);
+  const length = Math.hypot(forward, side);
 
   if (length > 1) {
     forward /= length;
-    right /= length;
+    side /= length;
   }
 
   const direction = new THREE.Vector3(
-    right,
+    side,
     0,
-    -forward
+    forward
   );
 
   direction.applyAxisAngle(
@@ -288,169 +236,78 @@ function updatePlayerMovement() {
     playerYaw
   );
 
-  const nextX =
-    player.position.x +
-    direction.x * PLAYER_SPEED;
+  player.position.x += direction.x * PLAYER_SPEED;
+  player.position.z += direction.z * PLAYER_SPEED;
 
-  const nextZ =
-    player.position.z +
-    direction.z * PLAYER_SPEED;
+  // Границы города
+  player.position.x = THREE.MathUtils.clamp(
+    player.position.x,
+    -112,
+    112
+  );
 
-  if (!isWaterArea(nextX, nextZ)) {
-    player.position.x = THREE.MathUtils.clamp(
-      nextX,
-      -115,
-      115
-    );
-
-    player.position.z = THREE.MathUtils.clamp(
-      nextZ,
-      -115,
-      115
-    );
-  }
+  player.position.z = THREE.MathUtils.clamp(
+    player.position.z,
+    -112,
+    112
+  );
 }
 
-/* =====================================
-   МОБИЛЬНЫЙ ДЖОЙСТИК
-===================================== */
+// ======================================
+// ДЖОЙСТИК
+// ======================================
 
-const joystick = document.getElementById("joystick");
-const joystickKnob = document.getElementById("joystickKnob");
-
-joystick.addEventListener("pointerdown", event => {
-  if (!isWalking) return;
-
-  joystickActive = true;
-  joystickPointerId = event.pointerId;
-
-  joystick.setPointerCapture(event.pointerId);
-
-  updateJoystick(event);
-});
-
-joystick.addEventListener("pointermove", event => {
-  if (!joystickActive) return;
-  if (event.pointerId !== joystickPointerId) return;
-
-  updateJoystick(event);
-});
-
-function updateJoystick(event) {
-  const rect = joystick.getBoundingClientRect();
-
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-
-  let x = event.clientX - centerX;
-  let y = event.clientY - centerY;
-
-  const maxDistance = rect.width / 2 - 26;
-
-  const distance = Math.hypot(x, y);
-
-  if (distance > maxDistance) {
-    x = (x / distance) * maxDistance;
-    y = (y / distance) * maxDistance;
-  }
-
-  joystickX = x / maxDistance;
-  joystickY = y / maxDistance;
-
-  joystickKnob.style.transform =
-    `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+function setJoystick(x, y) {
+  joystickX = Math.max(-1, Math.min(1, x));
+  joystickY = Math.max(-1, Math.min(1, y));
 }
 
 function resetJoystick() {
-  joystickActive = false;
-  joystickPointerId = null;
+  setJoystick(0, 0);
 
-  joystickX = 0;
-  joystickY = 0;
+  const knob = document.getElementById("joystickKnob");
 
-  joystickKnob.style.transform =
-    "translate(-50%, -50%)";
+  if (knob) {
+    knob.style.left = "37px";
+    knob.style.top = "37px";
+  }
 }
 
-joystick.addEventListener(
-  "pointerup",
-  resetJoystick
-);
-
-joystick.addEventListener(
-  "pointercancel",
-  resetJoystick
-);
-
-/* =====================================
-   ВЗАИМОДЕЙСТВИЕ
-===================================== */
-
-document
-  .getElementById("interactButton")
-  .addEventListener("click", interactWithObject);
+// ======================================
+// ВЗАИМОДЕЙСТВИЕ
+// ======================================
 
 function interactWithObject() {
-  if (!isWalking || !player) return;
+  if (!player || !scene) return;
 
-  const direction = new THREE.Vector3(0, 0, -1);
+  const raycaster = new THREE.Raycaster();
 
-  direction.applyAxisAngle(
-    new THREE.Vector3(0, 1, 0),
-    playerYaw
+  raycaster.setFromCamera(
+    new THREE.Vector2(0, 0),
+    camera
   );
 
-  const origin = player.position.clone();
+  const objects = [];
 
-  const ray = new THREE.Raycaster(
-    origin,
-    direction.normalize(),
-    0,
-    4
-  );
+  scene.traverse(object => {
+    if (object.isMesh) {
+      objects.push(object);
+    }
+  });
 
-  const objects = [
-    ...cityObjects,
-    ...natureObjects
-  ];
+  const hits = raycaster.intersectObjects(objects, true);
 
-  const intersections = ray.intersectObjects(
-    objects,
-    true
-  );
+  if (hits.length > 0) {
+    const object = hits[0].object;
 
-  if (intersections.length === 0) {
-    showNotification("ℹ️ Рядом нет объектов");
-    return;
-  }
-
-  let object = intersections[0].object;
-
-  while (object.parent && !object.userData.type) {
-    object = object.parent;
-  }
-
-  if (object.userData.type) {
-    showNotification(
-      `🏢 Объект: ${getBuildingName(object.userData.type)}`
+    alert(
+      object.userData?.type
+        ? "Объект: " + object.userData.type
+        : "Вы посмотрели на объект"
     );
-  } else {
-    showNotification("ℹ️ Здесь пока нельзя взаимодействовать");
   }
 }
 
-/* =====================================
-   ОБНОВЛЕНИЕ ДВИЖЕНИЯ
-===================================== */
-
-const originalAnimateCity = animateCity;
-
-function updatePlayer() {
-  updatePlayerMovement();
+function interact() {
+  interactWithObject();
 }
-
-/*
-  Игровой цикл вызывается из game.js.
-  Не создаём второй requestAnimationFrame,
-  чтобы не нагружать компьютер.
-*/
