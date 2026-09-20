@@ -1,432 +1,182 @@
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
   -webkit-tap-highlight-color: transparent;
 }
 
 html,
 body {
+  margin: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: Arial, sans-serif;
   background: #10151c;
-  color: white;
+  font-family: Arial, sans-serif;
   touch-action: none;
 }
 
-button {
-  border: none;
-  cursor: pointer;
-  color: white;
-  font-weight: bold;
-  transition: 0.2s;
-}
-
-button:active {
-  transform: scale(0.94);
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* Главное меню */
-
-.screen {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background:
-    linear-gradient(#0008, #000b),
-    radial-gradient(circle at center, #344b60, #080b10);
-  z-index: 20;
-}
-
-.menu-box {
-  width: min(90%, 420px);
-  padding: 35px 25px;
-  text-align: center;
-  border: 1px solid #ffffff22;
-  border-radius: 22px;
-  background: #151e29ee;
-  box-shadow: 0 15px 50px #0008;
-}
-
-.menu-box h1 {
-  font-size: 32px;
-  letter-spacing: 2px;
-  margin-bottom: 12px;
-}
-
-.menu-box p {
-  color: #aab8c7;
-  margin-bottom: 30px;
-}
-
-.menu-box button {
-  display: block;
-  width: 100%;
-  margin-top: 12px;
-  padding: 15px;
-  border-radius: 12px;
-  background: #2878d4;
-  font-size: 16px;
-}
-
-.menu-box button:last-child {
-  background: #293746;
-}
-
-/* Игровой интерфейс */
-
-#gameInterface {
-  position: fixed;
-  inset: 0;
-}
-
 #gameContainer {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 #gameContainer canvas {
   display: block;
   width: 100%;
   height: 100%;
+  touch-action: none;
+}
+
+/* Интерфейс */
+#gameInterface {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+#gameInterface button,
+#walkControls,
+#joystick,
+#joystickKnob {
+  pointer-events: auto;
 }
 
 /* Верхняя панель */
-
-.top-bar {
+#topPanel {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 5;
+  top: 12px;
+  left: 12px;
+  right: 12px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 14px 20px;
-  background: linear-gradient(#10151cee, #10151caa, transparent);
-  pointer-events: none;
+  gap: 10px;
 }
 
-.city-name {
-  font-size: 19px;
-  font-weight: bold;
-}
-
-.resources {
-  display: flex;
-  gap: 15px;
-  font-size: 14px;
-}
-
-.resources span {
-  white-space: nowrap;
-}
-
-/* Уведомления */
-
-#notification {
+/* Строительство */
+#constructionPanel {
   position: absolute;
-  top: 75px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10;
-  max-width: 90%;
-  padding: 12px 18px;
-  border-radius: 10px;
-  background: #172331ee;
-  box-shadow: 0 5px 20px #0005;
-  text-align: center;
-  font-size: 14px;
-  pointer-events: none;
-}
-
-/* Панель строительства */
-
-.construction-menu {
-  position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
-  gap: 8px;
-  width: min(95%, 850px);
-  padding: 10px;
-  border: 1px solid #ffffff20;
-  border-radius: 18px;
-  background: #101820e8;
-  backdrop-filter: blur(10px);
-}
-
-.build-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 5px;
-  width: 78px;
-  min-height: 65px;
-  padding: 8px 4px;
-  border: 1px solid #ffffff15;
+  max-width: 95vw;
+  gap: 6px;
+}
+
+button {
+  padding: 10px 14px;
+  border: none;
   border-radius: 10px;
-  background: #263544;
-  font-size: 12px;
+  color: white;
+  background: #256fe8;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-.build-button:first-line {
-  font-size: 22px;
-}
-
-.build-button:hover {
-  background: #376086;
-}
-
-/* Задания */
-
-#missionsPanel {
-  position: absolute;
-  top: 105px;
-  left: 15px;
-  z-index: 5;
-  width: 220px;
-  padding: 15px;
-  border: 1px solid #ffffff20;
-  border-radius: 13px;
-  background: #111b26dd;
-  backdrop-filter: blur(8px);
-  font-size: 13px;
-}
-
-#missionsPanel h3 {
-  margin-bottom: 10px;
-  font-size: 15px;
-}
-
-#missionsPanel p {
-  margin-bottom: 8px;
-  color: #d9e3ed;
-  line-height: 1.4;
+button:active {
+  transform: scale(0.95);
 }
 
 /* Управление прогулкой */
-
 #walkControls {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 8;
+  display: none;
+  z-index: 10;
   pointer-events: none;
 }
 
 #joystick {
   position: absolute;
-  bottom: 35px;
-  left: 25px;
+  left: 28px;
+  bottom: 28px;
   width: 125px;
   height: 125px;
-  border: 2px solid #ffffff35;
+  border: 2px solid #ffffff66;
   border-radius: 50%;
-  background: #172331aa;
+  background: #ffffff20;
   pointer-events: auto;
 }
 
 #joystickKnob {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 52px;
-  height: 52px;
+  left: 37px;
+  top: 37px;
+  width: 47px;
+  height: 47px;
   border-radius: 50%;
-  background: #dce8f5cc;
-  transform: translate(-50%, -50%);
+  background: #ffffffaa;
 }
 
-#interactButton,
-#exitWalkButton {
+#cameraTouchArea {
   position: absolute;
-  right: 25px;
-  padding: 13px 18px;
-  border-radius: 12px;
+  left: 35%;
+  right: 0;
+  top: 0;
+  bottom: 0;
   pointer-events: auto;
-  background: #2878d4dd;
-  font-size: 13px;
+  background: transparent;
 }
 
 #interactButton {
-  bottom: 105px;
+  position: absolute;
+  right: 25px;
+  bottom: 45px;
 }
 
 #exitWalkButton {
-  bottom: 45px;
-  background: #9e3b3bdd;
-}
-
-/* Окно подтверждения */
-
-#confirmBox {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 15;
-  width: min(90%, 350px);
-  padding: 25px;
-  transform: translate(-50%, -50%);
-  border: 1px solid #ffffff25;
-  border-radius: 18px;
-  background: #172331f5;
-  box-shadow: 0 10px 50px #0009;
-  text-align: center;
+  right: 20px;
+  top: 20px;
 }
 
-#confirmBox h3 {
-  margin-bottom: 12px;
-}
-
-#confirmBox p {
-  margin-bottom: 20px;
-  color: #b8c6d4;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-#confirmBox button {
-  margin: 5px;
-  padding: 11px 15px;
-  border-radius: 9px;
-  background: #2878d4;
-}
-
-#confirmBox button:last-child {
-  background: #4a5663;
-}
-
-/* Планшеты */
-
-@media (max-width: 800px) {
-  .top-bar {
-    padding: 10px;
+/* Горизонтальный режим */
+@media (orientation: landscape) {
+  #constructionPanel {
+    bottom: 8px;
   }
 
-  .city-name {
+  #joystick {
+    left: 24px;
+    bottom: 22px;
+  }
+}
+
+/* Если телефон вертикально */
+@media (orientation: portrait) {
+  #gameContainer::after {
+    content: "Поверните телефон горизонтально ↔";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    text-align: center;
+    color: white;
+    background: #10151cf5;
+    font-size: 22px;
+    font-weight: bold;
+    z-index: 100;
+  }
+}
+
+/* Компьютер */
+@media (min-width: 800px) {
+  #joystick {
+    display: none;
+  }
+
+  #cameraTouchArea {
+    display: none;
+  }
+
+  button {
     font-size: 15px;
-  }
-
-  .resources {
-    gap: 7px;
-    font-size: 11px;
-  }
-
-  #missionsPanel {
-    top: 65px;
-    left: 8px;
-    width: 175px;
-    padding: 10px;
-    font-size: 11px;
-  }
-
-  #missionsPanel h3 {
-    font-size: 13px;
-  }
-
-  .construction-menu {
-    bottom: 8px;
-    gap: 5px;
-    padding: 7px;
-  }
-
-  .build-button {
-    width: 58px;
-    min-height: 58px;
-    font-size: 10px;
-  }
-
-  #notification {
-    top: 60px;
-    font-size: 12px;
-  }
-}
-
-/* Телефон: вертикальный экран 9:16 */
-
-@media (max-width: 500px) and (orientation: portrait) {
-  .menu-box h1 {
-    font-size: 25px;
-  }
-
-  .menu-box {
-    padding: 28px 18px;
-  }
-
-  .construction-menu {
-    max-height: 160px;
-    overflow-y: auto;
-  }
-
-  .build-button {
-    width: calc(20% - 5px);
-    min-height: 55px;
-    padding: 5px 2px;
-  }
-
-  #missionsPanel {
-    width: 155px;
-    max-height: 95px;
-    overflow: hidden;
-  }
-
-  #joystick {
-    width: 115px;
-    height: 115px;
-    bottom: 25px;
-    left: 15px;
-  }
-
-  #interactButton,
-  #exitWalkButton {
-    right: 15px;
-  }
-
-  #interactButton {
-    bottom: 100px;
-  }
-
-  #exitWalkButton {
-    bottom: 35px;
-  }
-}
-
-/* Горизонтальный режим телефона */
-
-@media (max-height: 500px) {
-  .construction-menu {
-    width: auto;
-    right: 10px;
-    left: auto;
-    bottom: 8px;
-    transform: none;
-  }
-
-  .build-button {
-    width: 58px;
-    min-height: 52px;
-  }
-
-  #missionsPanel {
-    top: 60px;
-  }
-
-  #joystick {
-    bottom: 15px;
-    left: 15px;
   }
 }
