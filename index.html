@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Город Томаса 3D</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;overflow:hidden;background:#101820;color:white;font-family:Arial,sans-serif}
+canvas{display:block}
+#ui{position:fixed;inset:0;pointer-events:none}
+.panel{pointer-events:auto;background:rgba(20,29,40,.94);border:1px solid #405365;border-radius:12px;padding:12px}
+#top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.logo{font-size:18px;font-weight:bold;color:#7bdcff}
+.stats{display:flex;gap:15px;font-size:14px}
+button{background:#293d50;border:1px solid #4c6276;color:white;border-radius:8px;padding:10px;cursor:pointer}
+button:hover{background:#42627c}
+button.active{background:#1976a8}
+#menu{position:absolute;right:12px;top:85px;width:245px;max-height:calc(100vh - 100px);overflow-y:auto}
+#menu h3{margin:5px 0 10px}
+.build{display:flex;justify-content:space-between;width:100%;margin:5px 0}
+#bottom{position:absolute;bottom:15px;left:15px;display:flex;gap:8px}
+#hint{position:absolute;bottom:15px;right:15px;max-width:280px}
+#notice{position:absolute;top:85px;left:50%;transform:translateX(-50%);background:#203244;padding:12px 20px;border-radius:10px;display:none}
+#crosshair{position:absolute;top:50%;left:50%;width:8px;height:8px;border:1px solid white;border-radius:50%;transform:translate(-50%,-50%);display:none}
+.quest{background:#263746;border-radius:8px;padding:9px;margin:7px 0;font-size:12px}
+@media(max-width:650px){
+#top{flex-wrap:wrap}
+.stats{font-size:11px;gap:8px}
+#menu{width:215px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+
+<div id="top" class="panel">
+<div class="logo">🏙️ ГОРОД ТОМаса 3D</div>
+<div class="stats">
+<span>💰 <b id="money">10000</b> ₽</span>
+<span>👥 <b id="population">0</b></span>
+<span>🏠 <b id="houses">0</b></span>
+</div>
+<button onclick="toggleMenu()">☰</button>
+</div>
+
+<div id="menu" class="panel">
+
+<h3>🏗️ Строительство</h3>
+
+<button class="build" onclick="choose('house')">
+🏠 Жилой дом <span>500 ₽</span>
+</button>
+
+<button class="build" onclick="choose('tower')">
+🏢 Многоэтажка <span>2000 ₽</span>
+</button>
+
+<button class="build" onclick="choose('shop')">
+🛒 Магазин <span>1200 ₽</span>
+</button>
+
+<button class="build" onclick="choose('school')">
+🏫 Школа <span>3000 ₽</span>
+</button>
+
+<button class="build" onclick="choose('hospital')">
+🏥 Больница <span>4000 ₽</span>
+</button>
+
+<button class="build" onclick="choose('road')">
+🛣️ Дорога <span>100 ₽</span>
+</button>
+
+<button class="build" onclick="choose('park')">
+🌳 Парк <span>300 ₽</span>
+</button>
+
+<hr>
+
+<h3>📋 Задания</h3>
+<div id="quests"></div>
+
+<hr>
+
+<button onclick="saveGame()">💾 Сохранить</button>
+<button onclick="loadGame()">📂 Загрузить</button>
+
+</div>
+
+<div id="bottom">
+<button id="cityBtn" class="active" onclick="cityMode()">🏙️ Город</button>
+<button id="walkBtn" onclick="walkMode()">🚶 1-е лицо</button>
+<button onclick="resetCamera()">⌂</button>
+</div>
+
+<div id="hint" class="panel">
+<b>Управление</b><br>
+Город: мышь — вращение, колёсико — масштаб.<br>
+1-е лицо: WASD — движение, мышь — обзор.
+</div>
+
+<div id="crosshair"></div>
+<div id="notice"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+/* =========================
+   ОСНОВА
+========================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x9bb9cf);
+scene.fog = new THREE.Fog(0x9bb9cf,100,300);
+
+const camera = new THREE.PerspectiveCamera(
+55,
+innerWidth/innerHeight,
+0.1,
+500
+);
+
+const renderer = new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+
+document.body.appendChild(renderer.domElement);
+
+
+/* =========================
+   ОСВЕЩЕНИЕ
+========================= */
+
+scene.add(new THREE.HemisphereLight(0xdcecff,0x53634c,2));
+
+const sun = new THREE.DirectionalLight(0xffffff,3);
+sun.position.set(60,100,40);
+sun.castShadow=true;
+scene.add(sun);
+
+
+/* =========================
+   ЗЕМЛЯ
+========================= */
+
+const ground = new THREE.Mesh(
+new THREE.PlaneGeometry(300,300),
+new THREE.MeshStandardMaterial({
+color:0x729568,
+roughness:1
+})
+);
+
+ground.rotation.x=-Math.PI/2;
+ground.receiveShadow=true;
+scene.add(ground);
+
+
+/* =========================
+   ДОРОГИ
+========================= */
+
+function road(x,z,w=10,d=10){
+
+const mesh=new THREE.Mesh(
+new THREE.BoxGeometry(w,.08,d),
+new THREE.MeshStandardMaterial({color:0x3e454d})
+);
+
+mesh.position.set(x,.04,z);
+mesh.receiveShadow=true;
+scene.add(mesh);
+
+for(let i=-Math.floor(w/2)+1;i<Math.floor(w/2);i+=2){
+
+const line=new THREE.Mesh(
+new THREE.BoxGeometry(.35,.03,.8),
+new THREE.MeshBasicMaterial({color:0xf1d77c})
+);
+
+line.position.set(x+i,.1,z);
+scene.add(line);
+
+}
+
+}
+
+
+/* =========================
+   ДЕРЕВО
+========================= */
+
+function tree(x,z){
+
+const trunk=new THREE.Mesh(
+new THREE.CylinderGeometry(.18,.25,2,8),
+new THREE.MeshStandardMaterial({color:0x65452e})
+);
+
+trunk.position.set(x,1,z);
+trunk.castShadow=true;
+scene.add(trunk);
+
+const crown=new THREE.Mesh(
+new THREE.SphereGeometry(1.3,12,10),
+new THREE.MeshStandardMaterial({color:0x326b3d})
+);
+
+crown.position.set(x,2.5,z);
+crown.castShadow=true;
+scene.add(crown);
+
+}
+
+
+/* =========================
+   ЗДАНИЯ
+========================= */
+
+const types={
+
+house:{cost:500,pop:10,color:0xd7b38b,height:4},
+tower:{cost:2000,pop:50,color:0xaabcca,height:14},
+shop:{cost:1200,pop:0,color:0xd49b50,height:5},
+school:{cost:3000,pop:0,color:0xc9c19c,height:5},
+hospital:{cost:4000,pop:0,color:0xe5e5e5,height:6}
+
+};
+
+let buildings=[];
+
+function building(type,x,z){
+
+const t=types[type];
+
+const group=new THREE.Group();
+
+const body=new THREE.Mesh(
+new THREE.BoxGeometry(5,t.height,5),
+new THREE.MeshStandardMaterial({
+color:t.color,
+roughness:.8
+})
+);
+
+body.position.y=t.height/2;
+body.castShadow=true;
+body.receiveShadow=true;
+group.add(body);
+
+
+/* ОКНА */
+
+for(let y=2;y<t.height-1;y+=2.5){
+
+for(let side of [-1,1]){
+
+const windows=new THREE.Mesh(
+new THREE.BoxGeometry(.06,.65,3),
+new THREE.MeshStandardMaterial({
+color:0x82bdd0,
+metalness:.2,
+roughness:.3
+})
+);
+
+windows.position.set(side*2.51,y,0);
+group.add(windows);
+
+}
+
+}
+
+
+/* КРЫША */
+
+const roof=new THREE.Mesh(
+new THREE.BoxGeometry(5.3,.3,5.3),
+new THREE.MeshStandardMaterial({color:0x555d68})
+);
+
+roof.position.y=t.height+.15;
+group.add(roof);
+
+group.position.set(x,0,z);
+scene.add(group);
+
+return group;
+
+}
+
+
+/* =========================
+   ГОРОДСКИЕ ОБЪЕКТЫ
+========================= */
+
+function park(x,z){
+
+const grass=new THREE.Mesh(
+new THREE.BoxGeometry(8,.1,8),
+new THREE.MeshStandardMaterial({color:0x4c995b})
+);
+
+grass.position.set(x,.05,z);
+scene.add(grass);
+
+tree(x-2,z-2);
+tree(x+2,z+1);
+tree(x-1,z+2);
+
+}
+
+
+/* =========================
+   ИГРОВЫЕ ДАННЫЕ
+========================= */
+
+let money=10000;
+let population=0;
+let selected=null;
+let mode="city";
+
+const quests=[
+
+{id:1,title:"Первый дом",desc:"Построй 1 дом",type:"house",target:1,reward:500,done:false},
+
+{id:2,title:"Городская улица",desc:"Построй 3 дороги",type:"road",target:3,reward:700,done:false},
+
+{id:3,title:"Население",desc:"Достигни 50 жителей",type:"population",target:50,reward:1500,done:false},
+
+{id:4,title:"Торговля",desc:"Построй магазин",type:"shop",target:1,reward:1000,done:false}
+
+];
+
+let counts={};
+
+function notify(text){
+
+const el=document.getElementById("notice");
+
+el.textContent=text;
+el.style.display="block";
+
+clearTimeout(notify.timer);
+
+notify.timer=setTimeout(()=>{
+el.style.display="none";
+},2500);
+
+}
+
+function choose(type){
+
+if(mode!=="city"){
+notify("Сначала перейди в режим города");
+return;
+}
+
+selected=type;
+notify("Выбрано: "+type+" — нажми на землю");
+
+}
+
+function updateStats(){
+
+document.getElementById("money").textContent=money;
+document.getElementById("population").textContent=population;
+document.getElementById("houses").textContent=
+(counts.house||0)+(counts.tower||0);
+
+}
+
+function renderQuests(){
+
+const box=document.getElementById("quests");
+box.innerHTML="";
+
+quests.forEach(q=>{
+
+let progress=q.type==="population"?
+population:(counts[q.type]||0);
+
+progress=Math.min(progress,q.target);
+
+const div=document.createElement("div");
+div.className="quest";
+
+div.innerHTML=`
+<b>${q.done?"✅ ":""}${q.title}</b>
+<br>${q.desc}
+<br>Прогресс: ${progress}/${q.target}
+<br>Награда: ${q.reward} ₽
+`;
+
+box.appendChild(div);
+
+});
+
+}
+
+function checkQuests(){
+
+quests.forEach(q=>{
+
+if(q.done)return;
+
+let progress=q.type==="population"?
+population:(counts[q.type]||0);
+
+if(progress>=q.target){
+
+q.done=true;
+money+=q.reward;
+
+notify("Задание выполнено! +"+q.reward+" ₽");
+
+}
+
+});
+
+updateStats();
+renderQuests();
+
+}
+
+
+/* =========================
+   СТРОИТЕЛЬСТВО
+========================= */
+
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+
+renderer.domElement.addEventListener("pointerdown",e=>{
+
+if(mode!=="city"||!selected)return;
+if(e.button!==0)return;
+
+mouse.x=e.clientX/innerWidth*2-1;
+mouse.y=-(e.clientY/innerHeight)*2+1;
+
+raycaster.setFromCamera(mouse,camera);
+
+const hits=raycaster.intersectObject(ground);
+
+if(!hits.length)return;
+
+const point=hits[0].point;
+
+const x=Math.round(point.x/5)*5;
+const z=Math.round(point.z/5)*5;
+
+buildAt(selected,x,z);
+
+});
+
+function buildAt(type,x,z){
+
+const price=type==="road"?100:
+type==="park"?300:
+types[type].cost;
+
+if(money<price){
+
+notify("Недостаточно денег!");
+return;
+
+}
+
+money-=price;
+
+if(type==="road"){
+
+road(x,z,10,10);
+
+}else if(type==="park"){
+
+park(x,z);
+
+}else{
+
+const obj=building(type,x,z);
+
+buildings.push({
+type,x,z
+});
+
+population+=types[type].pop;
+
+}
+
+counts[type]=(counts[type]||0)+1;
+
+selected=null;
+
+updateStats();
+checkQuests();
+
+notify("Объект построен!");
+
+}
+
+
+/* =========================
+   КАМЕРА ГОРОДА
+========================= */
+
+let orbit={
+theta:.7,
+phi:.8,
+distance:90,
+target:new THREE.Vector3(0,0,0)
+};
+
+function updateOrbit(){
+
+const p=orbit.phi;
+const t=orbit.theta;
+const d=orbit.distance;
+
+camera.position.set(
+orbit.target.x+d*Math.sin(p)*Math.sin(t),
+orbit.target.y+d*Math.cos(p),
+orbit.target.z+d*Math.sin(p)*Math.cos(t)
+);
+
+camera.lookAt(orbit.target);
+
+}
+
+updateOrbit();
+
+
+let dragging=false;
+let lastX=0;
+let lastY=0;
+
+renderer.domElement.addEventListener("pointerdown",e=>{
+
+if(mode!=="city")return;
+
+if(e.button===2){
+
+dragging=true;
+lastX=e.clientX;
+lastY=e.clientY;
+
+}
+
+});
+
+window.addEventListener("pointerup",()=>dragging=false);
+
+window.addEventListener("pointermove",e=>{
+
+if(!dragging||mode!=="city")return;
+
+orbit.theta-=(e.clientX-lastX)*.008;
+orbit.phi-=(e.clientY-lastY)*.008;
+
+orbit.phi=Math.max(.25,Math.min(1.5,orbit.phi));
+
+lastX=e.clientX;
+lastY=e.clientY;
+
+updateOrbit();
+
+});
+
+renderer.domElement.addEventListener("contextmenu",e=>e.preventDefault());
+
+renderer.domElement.addEventListener("wheel",e=>{
+
+if(mode!=="city")return;
+
+orbit.distance+=e.deltaY*.06;
+orbit.distance=Math.max(20,Math.min(180,orbit.distance));
+
+updateOrbit();
+
+});
+
+
+function resetCamera(){
+
+orbit.theta=.7;
+orbit.phi=.8;
+orbit.distance=90;
+orbit.target.set(0,0,0);
+
+updateOrbit();
+
+}
+
+
+/* =========================
+   ПЕРВОЕ ЛИЦО
+========================= */
+
+const keys={};
+
+let yaw=0;
+let pitch=0;
+
+let player=new THREE.Vector3(0,2,20);
+
+window.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()]=true;
+});
+
+window.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false;
+});
+
+let mouseLocked=false;
+
+renderer.domElement.addEventListener("click",()=>{
+
+if(mode==="walk"){
+renderer.domElement.requestPointerLock();
+}
+
+});
+
+document.addEventListener("mousemove",e=>{
+
+if(!mouseLocked||mode!=="walk")return;
+
+yaw-=e.movementX*.002;
+pitch-=e.movementY*.002;
+
+pitch=Math.max(-1.4,Math.min(1.4,pitch));
+
+});
+
+document.addEventListener("pointerlockchange",()=>{
+
+mouseLocked=document.pointerLockElement===renderer.domElement;
+
+});
+
+
+function updateWalk(){
+
+const speed=.18;
+
+const forward=new THREE.Vector3(
+Math.sin(yaw),
+0,
+Math.cos(yaw)
+);
+
+const right=new THREE.Vector3(
+Math.cos(yaw),
+0,
+-Math.sin(yaw)
+);
+
+if(keys.w||keys.arrowup)
+player.addScaledVector(forward,-speed);
+
+if(keys.s||keys.arrowdown)
+player.addScaledVector(forward,speed);
+
+if(keys.a||keys.arrowleft)
+player.addScaledVector(right,-speed);
+
+if(keys.d||keys.arrowright)
+player.addScaledVector(right,speed);
+
+camera.position.copy(player);
+
+camera.rotation.order="YXZ";
+camera.rotation.y=yaw;
+camera.rotation.x=pitch;
+
+}
+
+
+/* =========================
+   РЕЖИМЫ
+========================= */
+
+function cityMode(){
+
+mode="city";
+
+document.getElementById("cityBtn").classList.add("active");
+document.getElementById("walkBtn").classList.remove("active");
+
+document.getElementById("crosshair").style.display="none";
+document.getElementById("hint").innerHTML=
+"<b>Город</b><br>Правая кнопка мыши — вращение.<br>Колёсико — масштаб.";
+
+selected=null;
+
+updateOrbit();
+
+}
+
+function walkMode(){
+
+mode="walk";
+
+document.getElementById("walkBtn").classList.add("active");
+document.getElementById("cityBtn").classList.remove("active");
+
+document.getElementById("crosshair").style.display="block";
+document.getElementById("hint").innerHTML=
+"<b>Первое лицо</b><br>WASD — ходьба.<br>Мышь — обзор.<br>Нажми на экран для управления.";
+
+selected=null;
+
+camera.position.copy(player);
+
+}
+
+
+/* =========================
+   СОХРАНЕНИЕ
+========================= */
+
+function saveGame(){
+
+localStorage.setItem("thomas3d",JSON.stringify({
+money,
+population,
+buildings,
+counts,
+quests:quests.map(q=>({id:q.id,done:q.done}))
+}));
+
+notify("Город сохранён!");
+
+}
+
+function loadGame(){
+
+const raw=localStorage.getItem("thomas3d");
+
+if(!raw){
+
+notify("Сохранение не найдено");
+return;
+
+}
+
+const data=JSON.parse(raw);
+
+money=data.money??10000;
+population=data.population??0;
+counts=data.counts??{};
+
+if(data.quests){
+
+data.quests.forEach(s=>{
+
+const q=quests.find(q=>q.id===s.id);
+
+if(q)q.done=s.done;
+
+});
+
+}
+
+updateStats();
+renderQuests();
+
+notify("Данные загружены");
+
+}
+
+
+/* =========================
+   МЕНЮ
+========================= */
+
+function toggleMenu(){
+
+const menu=document.getElementById("menu");
+
+menu.style.display=menu.style.display==="none"?"block":"none";
+
+}
+
+
+/* =========================
+   ЗАПУСК
+========================= */
+
+for(let x=-100;x<=100;x+=20){
+
+road(x,0,10,10);
+road(0,x,10,10);
+
+}
+
+for(let x=-90;x<=90;x+=20){
+
+for(let z=-90;z<=90;z+=20){
+
+if(Math.random()>.6)tree(x,z);
+
+}
+
+}
+
+updateStats();
+renderQuests();
+
+
+function animate(){
+
+requestAnimationFrame(animate);
+
+if(mode==="walk")updateWalk();
+
+renderer.render(scene,camera);
+
+}
+
+animate();
+
+
+window.addEventListener("resize",()=>{
+
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+
+renderer.setSize(innerWidth,innerHeight);
+
+});
+
+</script>
+
+</body>
+</html>
