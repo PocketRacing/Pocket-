@@ -1,738 +1,127 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Kartaviy City</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<style>
-*{box-sizing:border-box}
-body{margin:0;overflow:hidden;background:#101820;color:white;font:14px Arial}
-button{background:#263b4e;color:white;border:1px solid #526477;border-radius:9px;padding:10px;cursor:pointer}
-button:hover{background:#3b5c76}
-#game{position:fixed;inset:0}
-#ui{position:fixed;inset:0;z-index:5;pointer-events:none}
-#stats,#panel,#tools,#walkUI,#toast{pointer-events:auto}
-#stats{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:6px;flex-wrap:wrap}
-.stat,#panel,#tools{background:#101a24ed;border:1px solid #45576a;border-radius:12px;padding:9px;box-shadow:0 5px 18px #0005}
-.stat{font-size:12px}
-#panel{position:absolute;top:65px;left:8px;width:245px;max-height:calc(100% - 145px);overflow:auto}
-h2{font-size:18px;margin:0 0 10px}
-h3{font-size:13px;color:#9edaff;margin:12px 0 5px}
-#panel button{width:100%;margin:3px 0;font-size:12px}
-#tools{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
-#tools button{width:auto}
-#toast{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:#000d;border-radius:10px;padding:12px 18px;text-align:center;max-width:90%}
-#walkUI{display:none;position:absolute;inset:0}
-#exit{position:absolute;right:10px;top:65px}
-#interact{position:absolute;right:18px;bottom:125px}
-#joy{position:absolute;bottom:22px;left:22px;width:125px;height:125px;border:2px solid #ffffff55;background:#ffffff22;border-radius:50%}
-#knob{position:absolute;left:38px;top:38px;width:45px;height:45px;border-radius:50%;background:#ffffffaa}
-@media(max-width:600px){
-#panel{width:190px;max-height:45vh}
-#panel button{padding:8px;font-size:11px}
-.stat{font-size:10px;padding:6px}
-}
-</style>
+  <title>Kartaviy City</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 
 <body>
-<div id="game"></div>
 
-<div id="ui">
-  <div id="stats">
-    <div class="stat">💰 <b id="money">50000</b> ₽</div>
-    <div class="stat">👥 <b id="population">100</b></div>
-    <div class="stat">⭐ Уровень <b id="level">1</b></div>
-    <div class="stat">📅 День <b id="day">1</b></div>
+  <!-- Главное меню -->
+  <div id="mainMenu" class="screen">
+    <div class="menu-box">
+      <h1>KARTAVIY CITY</h1>
+      <p>Построй свой город</p>
+
+      <button id="startGame">Начать игру</button>
+      <button id="loadGame">Загрузить город</button>
+    </div>
   </div>
 
-  <div id="panel">
-    <h2>🏙️ Kartaviy City</h2>
-    <button onclick="cityMode()">🏗️ Режим города</button>
-    <button onclick="walkMode()">🚶 Прогулка</button>
+  <!-- Игровой интерфейс -->
+  <div id="gameInterface" class="hidden">
 
-    <h3>Строительство</h3>
-    <button onclick="selectBuild('house')">🏠 Жилой дом — 5000 ₽</button>
-    <button onclick="selectBuild('shop')">🛒 Магазин — 8000 ₽</button>
-    <button onclick="selectBuild('school')">🏫 Школа — 15000 ₽</button>
-    <button onclick="selectBuild('hospital')">🏥 Больница — 25000 ₽</button>
-    <button onclick="selectBuild('park')">🌳 Парк — 3000 ₽</button>
-    <button onclick="selectBuild('road')">🛣️ Дорога — 1000 ₽</button>
+    <header class="top-bar">
+      <div class="city-name">Мой город</div>
 
-    <h3>Коммунальные объекты</h3>
-    <button onclick="selectBuild('garbage')">🗑️ Мусорная станция — 12000 ₽</button>
-    <button onclick="selectBuild('landfill')">♻️ Полигон — 20000 ₽</button>
-    <button onclick="selectBuild('warehouse')">📦 Склад — 18000 ₽</button>
-    <button onclick="selectBuild('terminal')">🚛 Терминал — 30000 ₽</button>
+      <div class="resources">
+        <span>💰 <b id="money">50000</b> ₽</span>
+        <span>👥 <b id="population">0</b></span>
+        <span>⭐ Ур. <b id="level">1</b></span>
+      </div>
+    </header>
 
-    <h3>Работники</h3>
-    <button onclick="hire('builder')">👷 Строитель — 1000 ₽</button>
-    <button onclick="hire('garbage')">🗑️ Мусорщик — 1500 ₽</button>
-    <button onclick="hire('driver')">🚛 Дальнобойщик — 2500 ₽</button>
+    <!-- Сообщения игры -->
+    <div id="notification"></div>
 
-    <h3>📜 Задания</h3>
-    <div id="tasks"></div>
+    <!-- Игровой экран -->
+    <main id="gameContainer"></main>
 
-    <h3>Сохранение</h3>
-    <button onclick="saveGame()">💾 Сохранить</button>
-    <button onclick="loadGame()">📂 Загрузить</button>
-    <button onclick="newGame()">🔄 Новый город</button>
+    <!-- Меню строительства -->
+    <section id="constructionMenu" class="construction-menu">
+
+      <button class="build-button" data-building="road">
+        🛣️<span>Дорога</span>
+      </button>
+
+      <button class="build-button" data-building="house">
+        🏠<span>Дом</span>
+      </button>
+
+      <button class="build-button" data-building="shop">
+        🏪<span>Магазин</span>
+      </button>
+
+      <button class="build-button" data-building="school">
+        🏫<span>Школа</span>
+      </button>
+
+      <button class="build-button" data-building="hospital">
+        🏥<span>Больница</span>
+      </button>
+
+      <button class="build-button" data-building="park">
+        🌳<span>Парк</span>
+      </button>
+
+      <button class="build-button" data-building="bridge">
+        🌉<span>Мост</span>
+      </button>
+
+      <button class="build-button" data-building="bulldozer">
+        🚜<span>Убрать</span>
+      </button>
+
+      <button id="walkModeButton" class="build-button">
+        🚶<span>Прогулка</span>
+      </button>
+    </section>
+
+    <!-- Управление прогулкой -->
+    <div id="walkControls" class="hidden">
+
+      <div id="joystick">
+        <div id="joystickKnob"></div>
+      </div>
+
+      <button id="interactButton">Взаимодействовать</button>
+      <button id="exitWalkButton">Выйти</button>
+
+    </div>
+
+    <!-- Задания -->
+    <aside id="missionsPanel">
+      <h3>📋 Задания</h3>
+      <p id="missionText">Построй первый дом</p>
+      <div>Награда: <span id="missionReward">1000</span> ₽</div>
+    </aside>
+
+    <!-- Подтверждение удаления -->
+    <div id="confirmBox" class="hidden">
+      <h3>Удалить препятствия?</h3>
+      <p id="confirmText">
+        На территории находятся деревья или камни.
+      </p>
+
+      <button id="confirmRemove">Подтвердить</button>
+      <button id="cancelRemove">Отмена</button>
+    </div>
+
   </div>
 
-  <div id="tools">
-    <button onclick="rotate(-.25)">↶</button>
-    <button onclick="rotate(.25)">↷</button>
-    <button onclick="zoom(-5)">🔍 +</button>
-    <button onclick="zoom(5)">🔎 −</button>
-    <button onclick="cancelBuild()">❌ Отмена</button>
-  </div>
+  <!-- Скрипты игры -->
+  <script src="save.js"></script>
+  <script src="city.js"></script>
+  <script src="construction.js"></script>
+  <script src="player.js"></script>
+  <script src="game.js"></script>
 
-  <div id="toast">Добро пожаловать в Kartaviy City!</div>
-
-  <div id="walkUI">
-    <button id="exit" onclick="cityMode()">🏙️ В город</button>
-    <button id="interact" onclick="interact()">🤝 Взаимодействие</button>
-    <div id="joy"><div id="knob"></div></div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-<script>
-/* =========================
-   СОСТОЯНИЕ ИГРЫ
-========================= */
-
-const state={
- money:50000,
- population:100,
- level:1,
- day:1,
- mode:"city",
- selected:null,
- workers:{builder:0,garbage:0,driver:0},
- buildings:[]
-};
-
-const prices={
- house:5000,shop:8000,school:15000,hospital:25000,
- park:3000,road:1000,garbage:12000,landfill:20000,
- warehouse:18000,terminal:30000
-};
-
-const names={
- house:"Жилой дом",shop:"Магазин",school:"Школа",
- hospital:"Больница",park:"Парк",road:"Дорога",
- garbage:"Мусорная станция",landfill:"Полигон",
- warehouse:"Склад",terminal:"Грузовой терминал"
-};
-
-const completed=[];
-const missions=[
- ["Постройте 3 жилых дома",()=>count("house")>=3,8000],
- ["Постройте магазин",()=>count("shop")>=1,5000],
- ["Население достигло 300 человек",()=>state.population>=300,10000],
- ["Постройте мусорную станцию",()=>count("garbage")>=1,12000],
- ["Наймите двух работников",()=>workers()>=2,5000],
- ["Постройте грузовой терминал",()=>count("terminal")>=1,20000]
-];
-
-/* =========================
-   THREE.JS
-========================= */
-
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x9fc8df);
-scene.fog=new THREE.Fog(0x9fc8df,80,240);
-
-const camera=new THREE.PerspectiveCamera(
- 55,innerWidth/innerHeight,.1,500
-);
-
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.shadowMap.enabled=true;
-document.getElementById("game").appendChild(renderer.domElement);
-
-scene.add(new THREE.HemisphereLight(0xffffff,0x49654c,2));
-
-const sun=new THREE.DirectionalLight(0xffffff,2);
-sun.position.set(40,70,20);
-sun.castShadow=true;
-scene.add(sun);
-
-const ground=new THREE.Mesh(
- new THREE.PlaneGeometry(220,220),
- new THREE.MeshStandardMaterial({color:0x719b5c})
-);
-ground.rotation.x=-Math.PI/2;
-ground.receiveShadow=true;
-scene.add(ground);
-
-/* =========================
-   ПРИРОДА
-========================= */
-
-function lake(x,z,w,d){
- const m=new THREE.Mesh(
-  new THREE.PlaneGeometry(w,d),
-  new THREE.MeshStandardMaterial({
-   color:0x287eae,transparent:true,opacity:.88
-  })
- );
- m.rotation.x=-Math.PI/2;
- m.position.set(x,.04,z);
- m.userData.type="lake";
- scene.add(m);
-}
-
-lake(58,-42,65,38);
-lake(-65,52,25,20);
-
-function tree(x,z,s=1){
- const group=new THREE.Group();
-
- const trunk=new THREE.Mesh(
-  new THREE.CylinderGeometry(.25,.4,3,8),
-  new THREE.MeshStandardMaterial({color:0x765034})
- );
- trunk.position.y=1.5;
-
- const crown=new THREE.Mesh(
-  new THREE.ConeGeometry(2.1,5,8),
-  new THREE.MeshStandardMaterial({color:0x245d35})
- );
- crown.position.y=4.5;
-
- group.add(trunk,crown);
- group.position.set(x,0,z);
- group.scale.setScalar(s);
- scene.add(group);
-}
-
-for(let i=0;i<85;i++){
- let x=-100+Math.random()*65;
- let z=-95+Math.random()*180;
- if(Math.abs(x)<25&&Math.abs(z)<25)continue;
- tree(x,z,.6+Math.random()*.8);
-}
-
-function rock(x,z,s=1){
- const r=new THREE.Mesh(
-  new THREE.DodecahedronGeometry(1.3),
-  new THREE.MeshStandardMaterial({color:0x777b78,roughness:1})
- );
- r.position.set(x,.7*s,z);
- r.scale.set(s*1.5,s,s);
- r.rotation.y=Math.random()*3;
- scene.add(r);
-}
-
-for(let i=0;i<45;i++){
- rock(-95+Math.random()*190,-95+Math.random()*190,
- .4+Math.random()*1.2);
-}
-
-/* =========================
-   ДОРОГИ
-========================= */
-
-function road(x,z,rotation=0){
- const r=new THREE.Mesh(
-  new THREE.BoxGeometry(8,.12,45),
-  new THREE.MeshStandardMaterial({color:0x343a40})
- );
- r.position.set(x,.08,z);
- r.rotation.y=rotation;
- scene.add(r);
-}
-
-road(0,0,0);
-road(0,0,Math.PI/2);
-
-/* =========================
-   ОБЪЕКТЫ
-========================= */
-
-function createObject(type,x,z,level=1){
- const group=new THREE.Group();
-
- if(type==="road"){
-  const r=new THREE.Mesh(
-   new THREE.BoxGeometry(7,.15,7),
-   new THREE.MeshStandardMaterial({color:0x30353b})
-  );
-  r.position.y=.1;
-  group.add(r);
- }
-
- else if(type==="park"){
-  const p=new THREE.Mesh(
-   new THREE.BoxGeometry(10,.2,10),
-   new THREE.MeshStandardMaterial({color:0x3e884e})
-  );
-  p.position.y=.1;
-  group.add(p);
-  for(let i=0;i<4;i++)tree(
-   x-3+Math.random()*6,z-3+Math.random()*6,.5
-  );
- }
-
- else{
-  let w=6,h=5,d=6,c=0xd0b38a;
-
-  if(type==="house"){h=7;c=0xd8c1a2}
-  if(type==="shop"){c=0xb5d2d6}
-  if(type==="school"){w=10;d=8;h=6;c=0xd6b76a}
-  if(type==="hospital"){w=12;d=10;h=8;c=0xd7dce2}
-  if(type==="garbage"){w=10;d=8;h=4;c=0x637b64}
-  if(type==="landfill"){w=13;d=12;h=2;c=0x5d5543}
-  if(type==="warehouse"){w=13;d=9;h=6;c=0x8795a3}
-  if(type==="terminal"){w=15;d=12;h=7;c=0x657e9b}
-
-  h*=1+(level-1)*.25;
-
-  const body=new THREE.Mesh(
-   new THREE.BoxGeometry(w,h,d),
-   new THREE.MeshStandardMaterial({color:c})
-  );
-  body.position.y=h/2;
-  body.castShadow=true;
-  group.add(body);
-
-  const roof=new THREE.Mesh(
-   new THREE.BoxGeometry(w+.5,.4,d+.5),
-   new THREE.MeshStandardMaterial({color:0x4c5158})
-  );
-  roof.position.y=h+.2;
-  group.add(roof);
-
-  const windows=new THREE.MeshStandardMaterial({
-   color:0x91c9df,emissive:0x152f3b
-  });
-
-  for(let y=1.5;y<h;y+=2){
-   for(let wx=-w/2+1.2;wx<w/2;wx+=2){
-    const win=new THREE.Mesh(
-     new THREE.BoxGeometry(.65,.8,.05),windows
-    );
-    win.position.set(wx,y,d/2+.04);
-    group.add(win);
-   }
-  }
-
-  const door=new THREE.Mesh(
-   new THREE.BoxGeometry(1.2,2.2,.12),
-   new THREE.MeshStandardMaterial({color:0x493528})
-  );
-  door.position.set(0,1.1,d/2+.1);
-  group.add(door);
- }
-
- group.position.set(x,0,z);
- group.userData={type,level,name:names[type]};
- scene.add(group);
- return group;
-}
-
-/* =========================
-   СТРОИТЕЛЬСТВО
-========================= */
-
-function count(type){
- return state.buildings.filter(b=>b.type===type).length;
-}
-
-function workers(){
- return Object.values(state.workers).reduce((a,b)=>a+b,0);
-}
-
-function message(text){
- const el=document.getElementById("toast");
- el.textContent=text;
- el.style.display="block";
- clearTimeout(window.toastTimer);
- window.toastTimer=setTimeout(()=>el.style.display="none",3500);
-}
-
-function selectBuild(type){
- if(state.mode!=="city"){
-  message("Сначала вернитесь в режим города");
-  return;
- }
- state.selected=type;
- message("Выбрано: "+names[type]+". Нажмите на карту.");
-}
-
-function cancelBuild(){
- state.selected=null;
- message("Строительство отменено");
-}
-
-renderer.domElement.addEventListener("pointerdown",e=>{
- if(state.mode!=="city"||!state.selected)return;
-
- const mouse=new THREE.Vector2(
-  e.clientX/innerWidth*2-1,
-  -(e.clientY/innerHeight)*2+1
- );
-
- const ray=new THREE.Raycaster();
- ray.setFromCamera(mouse,camera);
-
- const direction=ray.ray.direction;
- if(Math.abs(direction.y)<.001)return;
-
- const t=-ray.ray.origin.y/direction.y;
- if(t<0)return;
-
- const point=ray.ray.origin.clone().add(direction.clone().multiplyScalar(t));
-
- const x=Math.round(point.x/7)*7;
- const z=Math.round(point.z/7)*7;
- const type=state.selected;
-
- if(state.money<prices[type]){
-  message("Недостаточно денег");
-  return;
- }
-
- if(Math.abs(x)<12&&Math.abs(z)<12){
-  message("Здесь нельзя строить");
-  return;
- }
-
- if(state.buildings.some(b=>Math.abs(b.x-x)<6&&Math.abs(b.z-z)<6)){
-  message("Место уже занято");
-  return;
- }
-
- state.money-=prices[type];
- createObject(type,x,z,1);
- state.buildings.push({type,x,z,level:1});
-
- if(type==="house")state.population+=40;
- if(type==="shop")state.population+=10;
-
- state.selected=null;
- calculateLevel();
- update();
- message("Построено: "+names[type]);
-});
-
-/* =========================
-   УРОВНИ И ЗАДАНИЯ
-========================= */
-
-function calculateLevel(){
- const n=state.buildings.length;
- state.level=n>=20?5:n>=14?4:n>=8?3:n>=3?2:1;
-}
-
-function updateTasks(){
- const box=document.getElementById("tasks");
- box.innerHTML="";
-
- missions.forEach((m,i)=>{
-  const done=completed.includes(i);
-
-  if(!done&&m[1]()){
-   completed.push(i);
-   state.money+=m[2];
-   message("Задание выполнено! +"+m[2]+" ₽");
-  }
-
-  const div=document.createElement("div");
-  div.style.padding="7px";
-  div.style.margin="4px 0";
-  div.style.background=done?"#214b36":"#202d39";
-  div.style.borderRadius="7px";
-  div.textContent=(done?"✅ ":"⬜ ")+m[0];
-  box.appendChild(div);
- });
-}
-
-function update(){
- document.getElementById("money").textContent=
-  Math.floor(state.money).toLocaleString("ru-RU");
-
- document.getElementById("population").textContent=state.population;
- document.getElementById("level").textContent=state.level;
- document.getElementById("day").textContent=state.day;
- updateTasks();
-}
-
-/* =========================
-   РАБОТНИКИ
-========================= */
-
-function hire(type){
- const costs={builder:1000,garbage:1500,driver:2500};
-
- if(type==="garbage"&&count("garbage")===0){
-  message("Сначала постройте мусорную станцию");
-  return;
- }
-
- if(type==="driver"&&count("terminal")===0){
-  message("Сначала постройте грузовой терминал");
-  return;
- }
-
- if(type==="driver"&&state.level<4){
-  message("Дальнобойщики открываются с 4 уровня");
-  return;
- }
-
- if(state.money<costs[type]){
-  message("Недостаточно денег");
-  return;
- }
-
- state.money-=costs[type];
- state.workers[type]++;
- message("Работник нанят");
- update();
-}
-
-/* =========================
-   КАМЕРА ГОРОДА
-========================= */
-
-let angle=Math.PI/4;
-let distance=52;
-
-function updateCamera(){
- if(state.mode!=="city")return;
-
- camera.position.set(
-  Math.cos(angle)*distance,
-  distance*.85,
-  Math.sin(angle)*distance
- );
- camera.lookAt(0,0,0);
-}
-
-function rotate(v){
- angle+=v;
- updateCamera();
-}
-
-function zoom(v){
- distance=Math.max(20,Math.min(100,distance+v));
- updateCamera();
-}
-
-/* =========================
-   ПРОГУЛКА
-========================= */
-
-const player={
- position:new THREE.Vector3(0,2,18),
- speed:.18
-};
-
-const keys={};
-
-document.addEventListener("keydown",e=>{
- keys[e.key.toLowerCase()]=true;
-});
-
-document.addEventListener("keyup",e=>{
- keys[e.key.toLowerCase()]=false;
-});
-
-function walkMode(){
- state.mode="walk";
- state.selected=null;
-
- document.getElementById("panel").style.display="none";
- document.getElementById("tools").style.display="none";
- document.getElementById("walkUI").style.display="block";
-
- camera.position.copy(player.position);
- camera.rotation.set(0,0,0);
- message("Прогулка: используйте WASD");
-}
-
-function cityMode(){
- state.mode="city";
-
- document.getElementById("panel").style.display="block";
- document.getElementById("tools").style.display="flex";
- document.getElementById("walkUI").style.display="none";
-
- updateCamera();
-}
-
-function updatePlayer(){
- if(state.mode!=="walk")return;
-
- if(keys.w)player.position.z-=player.speed;
- if(keys.s)player.position.z+=player.speed;
- if(keys.a)player.position.x-=player.speed;
- if(keys.d)player.position.x+=player.speed;
-
- player.position.x=THREE.MathUtils.clamp(player.position.x,-105,105);
- player.position.z=THREE.MathUtils.clamp(player.position.z,-105,105);
-
- camera.position.copy(player.position);
-}
-
-function interact(){
- let closest=null;
- let best=5;
-
- scene.traverse(o=>{
-  if(!o.userData||!o.userData.type)return;
-
-  const d=o.position.distanceTo(player.position);
-
-  if(d<best){
-   best=d;
-   closest=o;
-  }
- });
-
- if(!closest){
-  message("Рядом нет объектов");
-  return;
- }
-
- const type=closest.userData.type;
-
- if(type==="house"){
-  message("🏠 Дом: вход в интерьер будет добавлен следующим обновлением");
- }else{
-  message("Вы взаимодействуете с объектом: "+(names[type]||type));
- }
-}
-
-/* =========================
-   МОБИЛЬНЫЙ ДЖОЙСТИК
-========================= */
-
-let joyX=0,joyY=0,active=false;
-
-const joy=document.getElementById("joy");
-const knob=document.getElementById("knob");
-
-joy.addEventListener("pointerdown",e=>{
- active=true;
- joy.setPointerCapture(e.pointerId);
-});
-
-joy.addEventListener("pointermove",e=>{
- if(!active)return;
-
- const r=joy.getBoundingClientRect();
- let x=e.clientX-r.left-r.width/2;
- let y=e.clientY-r.top-r.height/2;
- const max=35;
- const len=Math.sqrt(x*x+y*y);
-
- if(len>max){
-  x=x/len*max;
-  y=y/len*max;
- }
-
- joyX=x/max;
- joyY=y/max;
- knob.style.left=38+x+"px";
- knob.style.top=38+y+"px";
-});
-
-function resetJoy(){
- active=false;
- joyX=0;
- joyY=0;
- knob.style.left="38px";
- knob.style.top="38px";
-}
-
-joy.addEventListener("pointerup",resetJoy);
-joy.addEventListener("pointercancel",resetJoy);
-
-function updateJoystick(){
- if(state.mode!=="walk")return;
-
- player.position.x+=joyX*player.speed;
- player.position.z+=joyY*player.speed;
- camera.position.copy(player.position);
-}
-
-/* =========================
-   СОХРАНЕНИЕ
-========================= */
-
-function saveGame(){
- localStorage.setItem("kartaviyCity",JSON.stringify({
-  state,
-  completed
- }));
- message("Город сохранён");
-}
-
-function loadGame(){
- const saved=localStorage.getItem("kartaviyCity");
-
- if(!saved){
-  message("Сохранение не найдено");
-  return;
- }
-
- const data=JSON.parse(saved);
- Object.assign(state,data.state);
-
- completed.length=0;
- completed.push(...(data.completed||[]));
-
- location.reload();
-}
-
-function newGame(){
- if(confirm("Начать новый город?")){
-  localStorage.removeItem("kartaviyCity");
-  location.reload();
- }
-}
-
-/* =========================
-   ИГРОВОЙ ЦИКЛ
-========================= */
-
-function loop(){
- requestAnimationFrame(loop);
- updatePlayer();
- updateJoystick();
- renderer.render(scene,camera);
-}
-
-setInterval(()=>{
- state.day++;
- state.money+=count("house")*100;
- state.money+=count("shop")*150;
- state.money+=count("terminal")*300;
-
- if(count("house")>0){
-  state.population+=Math.floor(count("house")*.5);
- }
-
- calculateLevel();
- update();
-},15000);
-
-addEventListener("resize",()=>{
- camera.aspect=innerWidth/innerHeight;
- camera.updateProjectionMatrix();
- renderer.setSize(innerWidth,innerHeight);
-});
-
-update();
-updateCamera();
-loop();
-</script>
 </body>
 </html>
