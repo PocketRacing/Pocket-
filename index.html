@@ -16,24 +16,18 @@
 <body>
 
   <!-- ГЛАВНОЕ МЕНЮ -->
-  <div id="mainMenu" style="display: flex;">
+  <div id="mainMenu">
 
     <h1>Kartaviy City</h1>
-
     <p>Построй свой город</p>
 
-    <button id="startGame">
-      Начать игру
-    </button>
-
-    <button id="loadGame">
-      Загрузить игру
-    </button>
+    <button id="startGame">Начать игру</button>
+    <button id="loadGame">Загрузить игру</button>
 
   </div>
 
 
-  <!-- ИГРА -->
+  <!-- ИГРОВОЙ ИНТЕРФЕЙС -->
   <div id="gameInterface" style="display: none;">
 
     <div id="gameContainer"></div>
@@ -64,65 +58,35 @@
     <!-- СТРОИТЕЛЬСТВО -->
     <div id="constructionPanel">
 
-      <button class="build-button" data-building="road">
-        🛣️ Дорога
-      </button>
+      <button class="build-button" data-building="road">🛣️ Дорога</button>
+      <button class="build-button" data-building="house">🏠 Дом</button>
+      <button class="build-button" data-building="shop">🏪 Магазин</button>
+      <button class="build-button" data-building="school">🏫 Школа</button>
+      <button class="build-button" data-building="hospital">🏥 Больница</button>
+      <button class="build-button" data-building="park">🌳 Парк</button>
+      <button class="build-button" data-building="bridge">🌉 Мост</button>
+      <button class="build-button" data-building="bulldozer">🗑️ Удалить</button>
 
-      <button class="build-button" data-building="house">
-        🏠 Дом
-      </button>
-
-      <button class="build-button" data-building="shop">
-        🏪 Магазин
-      </button>
-
-      <button class="build-button" data-building="school">
-        🏫 Школа
-      </button>
-
-      <button class="build-button" data-building="hospital">
-        🏥 Больница
-      </button>
-
-      <button class="build-button" data-building="park">
-        🌳 Парк
-      </button>
-
-      <button class="build-button" data-building="bridge">
-        🌉 Мост
-      </button>
-
-      <button class="build-button" data-building="bulldozer">
-        🗑️ Удалить
-      </button>
-
-      <button id="walkModeButton">
-        🚶 Прогулка
-      </button>
+      <button id="walkModeButton">🚶 Прогулка</button>
 
     </div>
 
 
-    <!-- ПРОГУЛКА И ДЖОЙСТИКИ -->
+    <!-- ПРОГУЛКА -->
     <div id="walkControls" style="display: none;">
 
-      <!-- ЛЕВЫЙ ДЖОЙСТИК -->
+      <!-- ЛЕВЫЙ ДЖОЙСТИК: ХОДЬБА -->
       <div id="joystick">
         <div id="joystickKnob"></div>
       </div>
 
-      <!-- ПРАВЫЙ ДЖОЙСТИК -->
+      <!-- ПРАВЫЙ ДЖОЙСТИК: КАМЕРА -->
       <div id="cameraJoystick">
         <div id="cameraJoystickKnob"></div>
       </div>
 
-      <button id="interactButton">
-        Взаимодействие
-      </button>
-
-      <button id="exitWalkButton">
-        Выйти
-      </button>
+      <button id="interactButton">Взаимодействие</button>
+      <button id="exitWalkButton">Выйти</button>
 
     </div>
 
@@ -131,7 +95,6 @@
     <div id="missionsPanel" style="display: none;">
 
       <h3>📋 Задания</h3>
-
       <div id="missionsList"></div>
 
     </div>
@@ -142,13 +105,8 @@
 
       <p id="confirmText"></p>
 
-      <button id="confirmYes">
-        Подтвердить
-      </button>
-
-      <button id="confirmNo">
-        Отмена
-      </button>
+      <button id="confirmYes">Подтвердить</button>
+      <button id="confirmNo">Отмена</button>
 
     </div>
 
