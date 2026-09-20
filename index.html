@@ -16,18 +16,28 @@
 <body>
 
   <!-- ГЛАВНОЕ МЕНЮ -->
-  <div id="mainMenu">
+  <div id="mainMenu" style="display: flex;">
+
     <h1>Kartaviy City</h1>
+
     <p>Построй свой город</p>
 
-    <button id="startGame">Начать игру</button>
-    <button id="loadGame">Загрузить игру</button>
+    <button id="startGame">
+      Начать игру
+    </button>
+
+    <button id="loadGame">
+      Загрузить игру
+    </button>
+
   </div>
 
+
   <!-- ИГРА -->
-  <div id="gameInterface">
+  <div id="gameInterface" style="display: none;">
 
     <div id="gameContainer"></div>
+
 
     <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
     <div id="topPanel">
@@ -46,10 +56,12 @@
 
     </div>
 
+
     <!-- УВЕДОМЛЕНИЯ -->
     <div id="notification"></div>
 
-    <!-- ПАНЕЛЬ СТРОИТЕЛЬСТВА -->
+
+    <!-- СТРОИТЕЛЬСТВО -->
     <div id="constructionPanel">
 
       <button class="build-button" data-building="road">
@@ -90,15 +102,16 @@
 
     </div>
 
-    <!-- УПРАВЛЕНИЕ ПРОГУЛКОЙ -->
-    <div id="walkControls">
 
-      <!-- ЛЕВЫЙ ДЖОЙСТИК: ХОДЬБА -->
+    <!-- ПРОГУЛКА И ДЖОЙСТИКИ -->
+    <div id="walkControls" style="display: none;">
+
+      <!-- ЛЕВЫЙ ДЖОЙСТИК -->
       <div id="joystick">
         <div id="joystickKnob"></div>
       </div>
 
-      <!-- ПРАВЫЙ ДЖОЙСТИК: ПОВОРОТ -->
+      <!-- ПРАВЫЙ ДЖОЙСТИК -->
       <div id="cameraJoystick">
         <div id="cameraJoystickKnob"></div>
       </div>
@@ -113,23 +126,38 @@
 
     </div>
 
+
     <!-- ЗАДАНИЯ -->
-    <div id="missionsPanel">
+    <div id="missionsPanel" style="display: none;">
+
       <h3>📋 Задания</h3>
+
       <div id="missionsList"></div>
+
     </div>
 
+
     <!-- ПОДТВЕРЖДЕНИЕ -->
-    <div id="confirmBox">
+    <div id="confirmBox" style="display: none;">
+
       <p id="confirmText"></p>
-      <button id="confirmYes">Подтвердить</button>
-      <button id="confirmNo">Отмена</button>
+
+      <button id="confirmYes">
+        Подтвердить
+      </button>
+
+      <button id="confirmNo">
+        Отмена
+      </button>
+
     </div>
 
   </div>
 
-  <!-- БИБЛИОТЕКА 3D -->
+
+  <!-- THREE.JS -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
 
   <!-- ФАЙЛЫ ИГРЫ -->
   <script src="save.js"></script>
